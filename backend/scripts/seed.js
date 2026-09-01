@@ -294,9 +294,15 @@ async function seed() {
   // ── Ledger: post real journals for the captured payments ─────────────
   // Uses the production posting path, so the seeded books are genuinely
   // balanced rather than fabricated — reconciliation runs clean on a fresh DB.
-  const captured = insertedPayments
-    .filter((payment) => [PAYMENT_STATUS.SUCCESS, PAYMENT_STATUS.PARTIALLY_REFUNDED, PAYMENT_STATUS.REFUNDED].includes(payment.status))
-    .slice(0, 150);
+  // Every captured payment gets a journal, exactly as it would in production.
+  // Capping this (an earlier version stopped at 150) left the settlements —
+  // which are computed from ALL successful payments — paying out far more than
+  // the ledger ever recorded as captured, driving the clearing account
+  // negative. The books stayed internally balanced, but the seeded state was
+  // economically impossible.
+  const captured = insertedPayments.filter((payment) =>
+    [PAYMENT_STATUS.SUCCESS, PAYMENT_STATUS.PARTIALLY_REFUNDED, PAYMENT_STATUS.REFUNDED]
+      .includes(payment.status));
 
   for (const payment of captured) {
     const merchant = merchants.find((entry) => String(entry._id) === String(payment.merchant));
