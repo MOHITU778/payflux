@@ -1,0 +1,52 @@
+{
+  "name": "payflux-backend",
+  "version": "1.0.0",
+  "description": "PayFlux — distributed payment orchestration gateway with idempotent APIs, double-entry ledger, async settlement pipeline and rule-based fraud detection.",
+  "main": "src/server.js",
+  "engines": { "node": ">=20.0.0" },
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "worker": "node src/workers/index.js",
+    "worker:dev": "nodemon src/workers/index.js",
+    "seed": "node scripts/seed.js",
+    "test": "jest --runInBand --detectOpenHandles",
+    "test:unit": "jest tests/unit --runInBand",
+    "test:integration": "jest tests/integration --runInBand --detectOpenHandles",
+    "test:coverage": "jest --runInBand --coverage",
+    "lint": "eslint src tests --ext .js"
+  },
+  "dependencies": {
+    "bullmq": "^5.12.0",
+    "compression": "^1.7.4",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "express-rate-limit": "^7.4.0",
+    "helmet": "^7.1.0",
+    "ioredis": "^5.4.1",
+    "joi": "^17.13.3",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.5.1",
+    "nanoid": "^3.3.7",
+    "prom-client": "^15.1.3",
+    "rate-limit-redis": "^4.2.0",
+    "swagger-ui-express": "^5.0.1",
+    "winston": "^3.13.1"
+  },
+  "devDependencies": {
+    "@shelf/jest-mongodb": "^4.3.2",
+    "eslint": "^8.57.0",
+    "ioredis-mock": "^8.9.0",
+    "jest": "^29.7.0",
+    "mongodb-memory-server": "^10.0.0",
+    "nodemon": "^3.1.4",
+    "supertest": "^7.0.0"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "setupFilesAfterEnv": ["<rootDir>/tests/helpers/setup.js"],
+    "testTimeout": 30000,
+    "collectCoverageFrom": ["src/**/*.js", "!src/server.js", "!src/workers/index.js"]
+  }
+}

@@ -1,28 +1,38 @@
-# Angular specific
-/dist/
-/out-tsc/
-/tmp/
-/coverage/
-/e2e/test-output/
-/.angular/
+# ─── Dependencies ───────────────────────────────────────────────────────────
+# Unanchored so these match at every level. `/node_modules/` would only match
+# the repo root and would happily commit backend/node_modules — a monorepo trap.
+node_modules/
+
+# ─── Build output ───────────────────────────────────────────────────────────
+dist/
+out-tsc/
 .angular/
-
-# Node modules and dependency files
-/node_modules/
-/package-lock.json
-/yarn.lock
-
-# Environment files
-/.env
-
-# Angular CLI and build artefacts
-/.angular-cli.json
-/.ng/
-
-# TypeScript cache
+.ng/
 *.tsbuildinfo
 
-# Logs
+# ─── Secrets ────────────────────────────────────────────────────────────────
+# Unanchored: catches .env, backend/.env, frontend/.env.
+# `.env.example` files are tracked deliberately as templates.
+.env
+.env.local
+.env.*.local
+
+# ─── Test output ────────────────────────────────────────────────────────────
+coverage/
+e2e/test-output/
+
+# ─── Logs ───────────────────────────────────────────────────────────────────
+*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# ─── Editors / OS ───────────────────────────────────────────────────────────
+.idea/
+.vscode/
+!.vscode/extensions.json
+.DS_Store
+Thumbs.db
+
+# Lockfiles ARE committed on purpose — `npm ci` needs them for reproducible,
+# byte-identical installs in Docker and CI.

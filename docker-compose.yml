@@ -1,0 +1,143 @@
+# PayFlux — full local stack.
+#
+#   docker compose up -d --build
+#   docker compose exec api npm run seed
+#
+# Console  http://localhost:8080
+# API docs http://localhost:4000/api/docs
+
+services:
+  # ── MongoDB ───────────────────────────────────────────────────────────
+  # Started as a single-node replica set, not a standalone. Multi-document
+  # transactions require a replica set, and the ledger uses them to post a
+  # journal and its entries atomically. A standalone would silently fall back
+  # to the non-transactional path.
+  mongo:
+    image: mongo:7.0
+    container_name: payflux-mongo
+    restart: unless-stopped
+    command: ["--replSet", "rs0", "--bind_ip_all"]
+    ports:
+      # Host port is configurable: many dev machines already run Mongo on 27017.
+      - "${MONGO_PORT:-27017}:27017"
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      # Initiates the replica set on first boot, then reports healthy once a
+      # primary has been elected.
+      test: >
+        mongosh --quiet --eval "
+          try { rs.status().ok }
+          catch(e) { rs.initiate({_id:'rs0',members:[{_id:0,host:'mongo:27017'}]}).ok }
+        "
+      interval: 5s
+      timeout: 10s
+      retries: 20
+      start_period: 10s
+    networks: [payflux]
+
+  # ── Redis ─────────────────────────────────────────────────────────────
+  redis:
+    image: redis:7.2-alpine
+    container_name: payflux-redis
+    restart: unless-stopped
+    command: >
+      redis-server
+      --appendonly yes
+      --appendfsync everysec
+      --maxmemory 512mb
+      --maxmemory-policy noeviction
+    # noeviction, deliberately: Redis holds idempotency claims and distributed
+    # locks. Silently evicting a key under memory pressure would let a
+    # duplicate charge through. Better to fail writes loudly than to lose a
+    # correctness guarantee quietly.
+    ports:
+      - "${REDIS_PORT_HOST:-6379}:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks: [payflux]
+
+  # ── API ───────────────────────────────────────────────────────────────
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: payflux-api
+    restart: unless-stopped
+    depends_on:
+      mongo: { condition: service_healthy }
+      redis: { condition: service_healthy }
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      MONGO_URI: mongodb://mongo:27017/payflux?replicaSet=rs0
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      LOG_LEVEL: info
+      JWT_SECRET: ${JWT_SECRET:-dev-only-access-secret-please-change-me-32}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-dev-only-refresh-secret-please-change-32}
+      CORS_ORIGINS: http://localhost:${CONSOLE_PORT:-8080},http://localhost:4200
+      # The API process also runs the schedulers; the worker does not.
+      ENABLE_SCHEDULERS: "true"
+    ports:
+      - "${API_PORT:-4000}:4000"
+    # SIGTERM must reach Node for graceful shutdown; give it room to drain
+    # in-flight payments before the container is killed.
+    stop_grace_period: 30s
+    networks: [payflux]
+
+  # ── Queue workers ─────────────────────────────────────────────────────
+  # A separate service from the API so queue load and request load scale
+  # independently: `docker compose up -d --scale worker=3`.
+  worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: payflux-worker
+    restart: unless-stopped
+    command: ["node", "src/workers/index.js"]
+    depends_on:
+      mongo: { condition: service_healthy }
+      redis: { condition: service_healthy }
+    environment:
+      NODE_ENV: production
+      MONGO_URI: mongodb://mongo:27017/payflux?replicaSet=rs0
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      LOG_LEVEL: info
+      JWT_SECRET: ${JWT_SECRET:-dev-only-access-secret-please-change-me-32}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-dev-only-refresh-secret-please-change-32}
+      # Only the API runs schedulers — otherwise both would contend for the
+      # scheduler lock every tick for no benefit.
+      ENABLE_SCHEDULERS: "false"
+    stop_grace_period: 30s
+    healthcheck:
+      test: ["CMD", "node", "-e", "process.exit(0)"]
+      interval: 30s
+    networks: [payflux]
+
+  # ── Angular console ───────────────────────────────────────────────────
+  console:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: payflux-console
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - "${CONSOLE_PORT:-8080}:80"
+    networks: [payflux]
+
+volumes:
+  mongo-data:
+  redis-data:
+
+networks:
+  payflux:
+    driver: bridge
