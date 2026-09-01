@@ -1,0 +1,8 @@
+{
+  "name": "payflux-storefront",
+  "version": "1.0.0",
+  "description": "Demo merchant storefront — shows how a shop integrates PayFlux from the buyer's side.",
+  "main": "server.js",
+  "scripts": { "start": "node server.js", "dev": "node server.js" },
+  "dependencies": { "express": "^4.19.2" }
+}

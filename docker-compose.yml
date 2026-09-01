@@ -134,6 +134,29 @@ services:
       - "${CONSOLE_PORT:-8080}:80"
     networks: [payflux]
 
+  # ── Demo merchant storefront ──────────────────────────────────────────
+  # A buyer-facing shop that integrates PayFlux the way a real merchant would:
+  # the browser talks to THIS server, and this server holds the API credentials
+  # and calls the gateway. Credentials never reach the browser.
+  storefront:
+    build:
+      context: ./storefront
+      dockerfile: Dockerfile
+    container_name: payflux-storefront
+    restart: unless-stopped
+    depends_on:
+      - api
+    environment:
+      NODE_ENV: production
+      PORT: 8081
+      # Reached over the compose network, not via the host port mapping.
+      PAYFLUX_API: http://api:4000/api/v1
+      MERCHANT_EMAIL: merchant@nimbusretail.example
+      MERCHANT_PASSWORD: PayFlux#2024
+    ports:
+      - "${STOREFRONT_PORT:-8081}:8081"
+    networks: [payflux]
+
 volumes:
   mongo-data:
   redis-data:

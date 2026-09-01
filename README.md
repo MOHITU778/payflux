@@ -54,7 +54,8 @@ docker compose exec api npm run seed        # 420 demo payments + a balanced led
 
 | Service | URL |
 |---|---|
-| Operations console | http://localhost:8080 |
+| **Demo storefront** (buy something) | http://localhost:8081 |
+| Operations console (admin) | http://localhost:8080 |
 | API | http://localhost:4000/api/v1 |
 | Swagger UI | http://localhost:4000/api/docs |
 | Health | http://localhost:4000/health |
@@ -109,6 +110,28 @@ afterwards. PayFlux handles all of it:
 | **Notifies merchants** | Signed webhooks with a published retry ladder and a replayable dead-letter queue. |
 | **Pays merchants out** | Batched settlements: gross − refunds − fees. |
 | **Shows operators everything** | Live dashboard: revenue, success rate, fraud alerts, settlement queue, ledger. |
+
+### Two user interfaces, deliberately
+
+| | Port | Who it's for |
+|---|---|---|
+| **Storefront** | 8081 | A *customer* buying something. This is where payments are created. |
+| **Console** | 8080 | *Operators* — dashboards, refunds, fraud review, settlements, the ledger. |
+
+They are separate because they serve opposite audiences, and because the
+storefront demonstrates the correct integration shape: the browser talks to the
+**shop's own server**, which holds the API credentials and calls PayFlux. A
+checkout page calling the gateway directly would put merchant credentials in
+front-end JavaScript, where any customer could read them and mint payments or
+issue refunds.
+
+```
+browser  →  shop server (credentials live here)  →  PayFlux API
+```
+
+The shop server also prices the order from its own catalogue rather than
+trusting the browser — verified: a request claiming a ₹12,999 keyboard costs
+₹1 is charged the real ₹12,999.
 
 **Three kinds of user:**
 
@@ -258,7 +281,8 @@ payflux/
 │   │   └── workers/         queue consumers + the worker process entry point
 │   ├── tests/               unit (no infra) + integration (real Mongo/Redis)
 │   └── scripts/seed.js
-├── frontend/                Angular 17 standalone, signals, lazy routes
+├── frontend/                Angular 17 admin console — standalone, signals, lazy routes
+├── storefront/              Demo merchant shop — the buyer's side of a payment
 ├── docs/                    architecture, schema, API, Redis, queues, webhooks, LLD, diagrams
 └── docker-compose.yml
 ```

@@ -1,0 +1,364 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Nimbus Retail — powered by PayFlux</title>
+<style>
+  :root {
+    --bg:#0d1117; --surface:#161b22; --surface-2:#1c2430; --border:#283040;
+    --text:#e6eaf2; --muted:#93a0b8; --dim:#6b7688;
+    --accent:#4f8cff; --accent-soft:#4f8cff1f;
+    --success:#29c088; --success-soft:#29c0881f;
+    --danger:#f2555a;  --danger-soft:#f2555a1f;
+    --warning:#e0a336; --warning-soft:#e0a3361f;
+    --radius:12px;
+    --font:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font);font-size:14px;line-height:1.5}
+  .num{font-variant-numeric:tabular-nums}
+  .mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+
+  header{
+    border-bottom:1px solid var(--border);background:var(--surface);
+    padding:14px 24px;display:flex;align-items:center;gap:14px;
+    position:sticky;top:0;z-index:20;
+  }
+  .brand{font-weight:700;font-size:16px;letter-spacing:-.02em}
+  .brand span{color:var(--accent)}
+  .powered{font-size:11px;color:var(--dim);border-left:1px solid var(--border);padding-left:14px}
+  .powered a{color:var(--accent);text-decoration:none}
+  .spacer{flex:1}
+  .cart-pill{
+    background:var(--accent-soft);color:var(--accent);padding:6px 13px;border-radius:999px;
+    font-size:12px;font-weight:600;
+  }
+
+  main{max-width:1120px;margin:0 auto;padding:24px;display:grid;grid-template-columns:1fr 380px;gap:22px}
+  @media(max-width:900px){main{grid-template-columns:1fr}}
+
+  h2{font-size:15px;margin:0 0 14px;font-weight:600}
+  .products{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px}
+  .product{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+    padding:18px;display:flex;flex-direction:column;gap:9px;
+  }
+  .product-emoji{font-size:32px}
+  .product-name{font-weight:600;font-size:14px}
+  .product-blurb{font-size:12px;color:var(--dim);flex:1}
+  .product-price{font-size:17px;font-weight:650}
+  .btn{
+    padding:9px 15px;border-radius:8px;border:1px solid var(--border);background:var(--surface-2);
+    color:var(--text);font:inherit;font-size:13px;font-weight:500;cursor:pointer;
+    display:inline-flex;align-items:center;justify-content:center;gap:7px;transition:background .15s,opacity .15s;
+  }
+  .btn:hover:not(:disabled){background:var(--border)}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  .btn-primary{background:var(--accent);border-color:var(--accent);color:#fff}
+  .btn-primary:hover:not(:disabled){background:#6b9dff}
+  .btn-block{width:100%;padding:12px}
+  .btn-sm{padding:6px 11px;font-size:12px}
+
+  aside{position:sticky;top:78px;align-self:start}
+  .panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px;margin-bottom:14px}
+
+  .line{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px}
+  .line:last-of-type{border-bottom:none}
+  .line-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .qty{display:flex;align-items:center;gap:6px}
+  .qty button{
+    width:22px;height:22px;border-radius:5px;border:1px solid var(--border);
+    background:var(--surface-2);color:var(--text);cursor:pointer;font-size:13px;line-height:1;
+  }
+  .total{display:flex;justify-content:space-between;align-items:baseline;padding-top:12px;margin-top:6px;border-top:1px solid var(--border)}
+  .total-amount{font-size:21px;font-weight:700}
+
+  label{display:block;font-size:12px;color:var(--muted);margin-bottom:5px}
+  input,select{
+    width:100%;padding:9px 11px;border-radius:8px;border:1px solid var(--border);
+    background:var(--surface-2);color:var(--text);font:inherit;font-size:13px;
+  }
+  input:focus,select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+  .field{margin-bottom:12px}
+  .field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .hint{font-size:11px;color:var(--dim);margin-top:5px}
+
+  .result{border-radius:var(--radius);padding:18px;margin-bottom:14px;border:1px solid}
+  .result-ok{background:var(--success-soft);border-color:var(--success)}
+  .result-bad{background:var(--danger-soft);border-color:var(--danger)}
+  .result-warn{background:var(--warning-soft);border-color:var(--warning)}
+  .result-title{font-size:15px;font-weight:650;display:flex;align-items:center;gap:9px}
+  .result-ok .result-title{color:var(--success)}
+  .result-bad .result-title{color:var(--danger)}
+  .result-warn .result-title{color:var(--warning)}
+  .kv{display:grid;grid-template-columns:auto 1fr;gap:5px 14px;margin-top:13px;font-size:12px}
+  .kv dt{color:var(--dim)}
+  .kv dd{margin:0;text-align:right;word-break:break-all}
+  .badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:10px;font-weight:700;letter-spacing:.03em}
+  .badge-replay{background:var(--accent-soft);color:var(--accent)}
+
+  .demo{background:var(--surface-2);border:1px dashed var(--border);border-radius:var(--radius);padding:14px;margin-bottom:14px}
+  .demo-title{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--dim);margin-bottom:9px}
+  .demo p{margin:0 0 10px;font-size:12px;color:var(--muted)}
+  .empty{color:var(--dim);font-size:13px;text-align:center;padding:22px 0}
+  .spin{width:13px;height:13px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:s .7s linear infinite;display:inline-block}
+  @keyframes s{to{transform:rotate(360deg)}}
+  a.link{color:var(--accent);text-decoration:none;font-size:12px}
+  a.link:hover{text-decoration:underline}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">Nimbus <span>Retail</span></div>
+  <div class="powered">payments by <a href="http://localhost:8080" target="_blank" rel="noopener">PayFlux ⚡</a></div>
+  <div class="spacer"></div>
+  <div class="cart-pill" id="cartPill">Cart empty</div>
+</header>
+
+<main>
+  <section>
+    <h2>Shop</h2>
+    <div class="products" id="products"></div>
+  </section>
+
+  <aside>
+    <div class="panel">
+      <h2>Your order</h2>
+      <div id="cartLines"><div class="empty">Nothing in the cart yet</div></div>
+      <div class="total" id="totalRow" hidden>
+        <span>Total</span>
+        <span class="total-amount num" id="total">₹0.00</span>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Checkout</h2>
+      <div class="field">
+        <label for="email">Email</label>
+        <input id="email" type="email" value="buyer@example.com" />
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label for="last4">Card last 4</label>
+          <input id="last4" maxlength="4" value="4242" />
+          <div class="hint">Only the last 4 — a full card number is never sent.</div>
+        </div>
+        <div class="field">
+          <label for="country">Country</label>
+          <select id="country">
+            <option value="IN" selected>India (IN)</option>
+            <option value="GB">United Kingdom (GB)</option>
+            <option value="SG">Singapore (SG)</option>
+            <option value="KP">North Korea (KP) — sanctioned</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label for="method">Payment method</label>
+        <select id="method">
+          <option value="CARD">Card</option>
+          <option value="UPI">UPI</option>
+          <option value="NETBANKING">Net banking</option>
+          <option value="WALLET">Wallet</option>
+        </select>
+      </div>
+      <button class="btn btn-primary btn-block" id="payBtn" disabled>Pay</button>
+    </div>
+
+    <div id="resultSlot"></div>
+
+    <div class="demo" id="demoSlot" hidden>
+      <div class="demo-title">Try the guarantee</div>
+      <p>Re-send this <em>exact</em> checkout with the same idempotency key — the way a client retries
+         after a network timeout. You should get the same payment back, not a second charge.</p>
+      <button class="btn btn-sm" id="retryBtn">↻ Retry with the same key</button>
+      <button class="btn btn-sm" id="newBtn">Start a new order</button>
+    </div>
+  </aside>
+</main>
+
+<script>
+const money = m => '₹' + (m / 100).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+let catalogue = [];
+const cart = new Map();          // sku → quantity
+let lastKey = null;              // idempotency key of the last attempt
+
+async function loadCatalogue() {
+  const res = await fetch('/api/catalogue');
+  catalogue = (await res.json()).products;
+  document.getElementById('products').innerHTML = catalogue.map(p => `
+    <div class="product">
+      <div class="product-emoji">${p.emoji}</div>
+      <div class="product-name">${p.name}</div>
+      <div class="product-blurb">${p.blurb}</div>
+      <div class="product-price num">${money(p.priceMinor)}</div>
+      <button class="btn" data-add="${p.sku}">Add to cart</button>
+    </div>`).join('');
+  document.querySelectorAll('[data-add]').forEach(b =>
+    b.onclick = () => { add(b.dataset.add); });
+}
+
+function add(sku) { cart.set(sku, (cart.get(sku) || 0) + 1); render(); }
+function setQty(sku, q) { q <= 0 ? cart.delete(sku) : cart.set(sku, q); render(); }
+
+function total() {
+  let t = 0;
+  for (const [sku, q] of cart) t += catalogue.find(p => p.sku === sku).priceMinor * q;
+  return t;
+}
+
+function render() {
+  const lines = document.getElementById('cartLines');
+  if (!cart.size) {
+    lines.innerHTML = '<div class="empty">Nothing in the cart yet</div>';
+    document.getElementById('totalRow').hidden = true;
+    document.getElementById('cartPill').textContent = 'Cart empty';
+    document.getElementById('payBtn').disabled = true;
+    return;
+  }
+  lines.innerHTML = [...cart].map(([sku, q]) => {
+    const p = catalogue.find(x => x.sku === sku);
+    return `<div class="line">
+      <span class="line-name">${p.name}</span>
+      <span class="qty">
+        <button data-dec="${sku}">−</button><span class="num">${q}</span><button data-inc="${sku}">+</button>
+      </span>
+      <span class="num">${money(p.priceMinor * q)}</span>
+    </div>`;
+  }).join('');
+  lines.querySelectorAll('[data-inc]').forEach(b => b.onclick = () => setQty(b.dataset.inc, cart.get(b.dataset.inc) + 1));
+  lines.querySelectorAll('[data-dec]').forEach(b => b.onclick = () => setQty(b.dataset.dec, cart.get(b.dataset.dec) - 1));
+
+  document.getElementById('totalRow').hidden = false;
+  document.getElementById('total').textContent = money(total());
+  const count = [...cart.values()].reduce((a, b) => a + b, 0);
+  document.getElementById('cartPill').textContent = `${count} item${count > 1 ? 's' : ''} · ${money(total())}`;
+  document.getElementById('payBtn').disabled = false;
+  document.getElementById('payBtn').textContent = `Pay ${money(total())}`;
+}
+
+async function pay(reuseKey) {
+  const btn = document.getElementById('payBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin"></span> Processing…';
+
+  const body = {
+    items: [...cart].map(([sku, quantity]) => ({ sku, quantity })),
+    customer: {
+      email: document.getElementById('email').value,
+      last4: document.getElementById('last4').value,
+      country: document.getElementById('country').value,
+      method: document.getElementById('method').value,
+      customerId: 'cust_' + document.getElementById('email').value.split('@')[0],
+    },
+    ...(reuseKey ? { idempotencyKey: reuseKey } : {}),
+  };
+
+  let data;
+  try {
+    const res = await fetch('/api/checkout', {
+      method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body),
+    });
+    data = await res.json();
+  } catch (e) {
+    data = { error: { code: 'NETWORK', message: 'Could not reach the shop server.' } };
+  }
+
+  lastKey = data.idempotencyKey || lastKey;
+  showResult(data);
+  render();
+  document.getElementById('demoSlot').hidden = !lastKey;
+}
+
+function showResult(d) {
+  const slot = document.getElementById('resultSlot');
+  const p = d.payment;
+
+  // A blocked or declined payment is a *valid answer* from the gateway, not an
+  // error in the shop — so each gets its own distinct presentation.
+  if (p && p.status === 'SUCCESS') {
+    slot.innerHTML = `
+      <div class="result result-ok">
+        <div class="result-title">✓ Payment successful
+          ${d.replayed ? '<span class="badge badge-replay">REPLAYED — not a second charge</span>' : ''}</div>
+        <dl class="kv">
+          <dt>Amount</dt><dd class="num">₹${p.amount}</dd>
+          <dt>Payment ID</dt><dd class="mono">${p.paymentId}</dd>
+          <dt>Method</dt><dd>${p.method}${p.customer?.network ? ' · ' + p.customer.network : ''}</dd>
+          <dt>Auth code</dt><dd class="mono">${p.acquirer?.authCode || '—'}</dd>
+          <dt>Platform fee</dt><dd class="num">₹${p.fee}</dd>
+          <dt>Risk score</dt><dd class="num">${p.risk.score}/100 · ${p.risk.decision}</dd>
+          <dt>Idempotency key</dt><dd class="mono">${d.idempotencyKey}</dd>
+        </dl>
+        <div style="margin-top:12px">
+          <a class="link" href="http://localhost:8080/transactions/${p.paymentId}" target="_blank" rel="noopener">
+            View in the PayFlux console →</a>
+        </div>
+      </div>`;
+    return;
+  }
+
+  if (p && p.status === 'FAILED') {
+    slot.innerHTML = `
+      <div class="result result-bad">
+        <div class="result-title">✗ Payment declined</div>
+        <dl class="kv">
+          <dt>Reason</dt><dd>${p.failure?.code || 'DECLINED'}</dd>
+          <dt>Message</dt><dd>${p.failure?.message || '—'}</dd>
+          <dt>Payment ID</dt><dd class="mono">${p.paymentId}</dd>
+        </dl>
+        <div class="hint" style="margin-top:10px">The card was reachable and said no — this is a
+          final answer, not something to retry.</div>
+      </div>`;
+    return;
+  }
+
+  if (p && p.status === 'PROCESSING') {
+    slot.innerHTML = `
+      <div class="result result-warn">
+        <div class="result-title">⏳ Payment processing</div>
+        <div class="hint" style="margin-top:8px">We could not get a definitive answer from the card
+          network. The order is not confirmed yet — the shop polls until it resolves.</div>
+        <dl class="kv"><dt>Payment ID</dt><dd class="mono">${p.paymentId}</dd></dl>
+        <button class="btn btn-sm" style="margin-top:10px" onclick="verify('${p.paymentId}')">Check again</button>
+      </div>`;
+    return;
+  }
+
+  const e = d.error || {};
+  const blocked = e.code === 'FRAUD_BLOCKED';
+  slot.innerHTML = `
+    <div class="result ${blocked ? 'result-bad' : 'result-warn'}">
+      <div class="result-title">${blocked ? '🛡 Blocked by risk checks' : '⚠ ' + (e.code || 'Error')}</div>
+      <div class="hint" style="margin-top:8px">${e.message || d.error || 'Something went wrong.'}</div>
+      ${blocked && e.details ? `<dl class="kv">
+        <dt>Risk score</dt><dd class="num">${e.details.riskScore}/100</dd>
+        <dt>Triggered</dt><dd>${(e.details.triggeredRules || []).join(', ')}</dd></dl>` : ''}
+      ${d.correlationId ? `<dl class="kv"><dt>Trace</dt><dd class="mono">${d.correlationId}</dd></dl>` : ''}
+    </div>`;
+}
+
+async function verify(id) {
+  const res = await fetch('/api/verify/' + id, { method: 'POST' });
+  const d = await res.json();
+  showResult({ payment: d.payment, error: d.error, idempotencyKey: lastKey });
+}
+
+document.getElementById('payBtn').onclick = () => pay(null);
+document.getElementById('retryBtn').onclick = () => pay(lastKey);
+document.getElementById('newBtn').onclick = () => {
+  lastKey = null;
+  cart.clear();
+  document.getElementById('resultSlot').innerHTML = '';
+  document.getElementById('demoSlot').hidden = true;
+  render();
+};
+
+loadCatalogue().then(render);
+</script>
+</body>
+</html>
