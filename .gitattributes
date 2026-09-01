@@ -1,0 +1,19 @@
+# Normalise text files in the repo, but force platform-correct line endings on
+# checkout for the launcher scripts.
+* text=auto eol=lf
+
+# Windows batch and PowerShell need CRLF. A .bat checked out with LF endings
+# can mis-parse labels and multi-line blocks, which fails in ways that are very
+# hard to diagnose from the error message.
+*.bat  text eol=crlf
+*.cmd  text eol=crlf
+*.ps1  text eol=crlf
+
+# Shell scripts must stay LF, or the shebang line carries a stray CR and the
+# kernel reports "bad interpreter: /usr/bin/env bash^M".
+*.sh   text eol=lf
+
+# Don't let Git mangle binaries.
+*.png binary
+*.jpg binary
+*.ico binary

@@ -40,10 +40,25 @@ provable financial correctness — rather than CRUD over a `payments` table.
 
 ## Quick start
 
+**One click.** Clone the repo, then:
+
+| Platform | What to do |
+|---|---|
+| **Windows** | Double-click **`RUN-PAYFLUX.bat`** |
+| **macOS / Linux** | `./run-payflux.sh` |
+
+That's it. The script checks Docker is actually running, generates the JWT
+secrets, finds free ports if the defaults are taken, builds and starts all six
+containers, waits for the API to report healthy, seeds 420 demo payments, and
+opens your browser.
+
+<details>
+<summary>Or do it manually</summary>
+
 ```bash
 git clone https://github.com/MOHITU778/payflux.git && cd payflux
 
-# Generate the two required secrets (both must be 32+ characters).
+# Both secrets must be 32+ characters or the API refuses to boot.
 cp .env.example .env
 sed -i "s|^JWT_SECRET=.*|JWT_SECRET=$(openssl rand -hex 32)|" .env
 sed -i "s|^JWT_REFRESH_SECRET=.*|JWT_REFRESH_SECRET=$(openssl rand -hex 32)|" .env
@@ -51,6 +66,10 @@ sed -i "s|^JWT_REFRESH_SECRET=.*|JWT_REFRESH_SECRET=$(openssl rand -hex 32)|" .e
 docker compose up -d --build
 docker compose exec api npm run seed        # 420 demo payments + a balanced ledger
 ```
+</details>
+
+**Requires** [Docker Desktop](https://www.docker.com/products/docker-desktop).
+Nothing else — no Node, no MongoDB, no Redis installed locally.
 
 | Service | URL |
 |---|---|
@@ -284,6 +303,9 @@ payflux/
 ├── frontend/                Angular 17 admin console — standalone, signals, lazy routes
 ├── storefront/              Demo merchant shop — the buyer's side of a payment
 ├── docs/                    architecture, schema, API, Redis, queues, webhooks, LLD, diagrams
+├── RUN-PAYFLUX.bat          one-click start for Windows
+├── run-payflux.sh           one-command start for macOS / Linux
+├── scripts/launch.ps1       the launcher logic both scripts share
 └── docker-compose.yml
 ```
 
